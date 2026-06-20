@@ -9,7 +9,7 @@ const configSchema = z.object({
   PORT: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .default(8000),
+    .default(8000), // possible error might be in future
   GROQ_API_KEY: z.string().default(""),
   GROQ_MODEL: z.string().default("llama-3.1-8b-instant"),
   OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
