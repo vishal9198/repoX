@@ -47,7 +47,7 @@ export const ingestRepoToDb = async (repoName: string, chunks: CodeChunk[]) => {
   const metadatas: any[] = [];
 
   for (const chunk of chunks) {
-    //process each chunk and prepare
+    //process each chunk and prepare for inserting into the database
     // Create a unique ID string: "owner/repo::src/main.ts::0"
     const safeId =
       `${repoName}::${chunk.filePath}::${chunk.chunkIndex}`.replace(/\s/g, "_");
