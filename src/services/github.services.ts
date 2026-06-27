@@ -165,3 +165,36 @@ export const fetchRepoTree = async (
     return true;
   });
 };
+
+export const fetchFileContent = async (
+  owner: string,
+  repo: string,
+  path: string,
+): Promise<string | null> => {
+  try {
+    const data = await githubFetch(`/repo/${owner}/${repo}/contents/${path}`);
+    //This path is a folder, not a file" We skip it.Because embeddings require TEXT files.
+    //because folders do not contain code directly.
+    //If path is DIRECTORY/FOLDER
+    // Example:
+    // path = "src"
+    // GitHub returns:
+
+    // [
+    //   { "name": "server.ts" },
+    //   { "name": "routes" },
+    //   { "name": "controllers" }
+    // ] thats why return null as these we cant do embedding here
+
+    if (Array.isArray(data)) return null;
+    if (data.size() > 50 * 1024) return null; //skip 50 kb file as it dont contain any code only contain the directery file
+    if (data.encoding === "base64" && data.content) {
+      return Buffer.from(data.content, "base64").toString("utf-8"); //decode base 64 to std text as github returns encoded text in base 64 as it easy to transfer the files in this format so decode it for reading
+    }
+    if (data.encoding === "none") return null; //Some files:images,binaries,unsupported files may have:"encoding": "none" These cannot become readable text.So skip them
+    return data.content || null;
+  } catch (error) {
+    console.debug(`Skipped fetching  ${path}`, (error as Error).message);
+    return null;
+  }
+};
