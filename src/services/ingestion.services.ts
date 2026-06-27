@@ -99,4 +99,35 @@ export async function* ingestRepoGenerator(repoUrl: string) {
     };
     return;
   }
+  // Step 4: Fetch File Contents
+  // Note: We cap it at 50 files to prevent hitting rate limits although there is many files but we only fetch 50 most imp files most of the logic of code is there
+  const selectedFiles = tree.slices(0, 50);
+  const totalFiles = selectedFiles.length;
+  yield {
+    type: "progress",
+    step: "fetching_files",
+    message: `Fetching content of ${totalFiles} key files...`,
+    progress: 35,
+  };
+  const fileContents: { path: string; content: string }[] = [];
+  let failed = 0;
+
+  for (let i = 0; i < totalFiles; i++) {
+    const fileItem = selectedFiles[i];
+    const progress = Math.floor(35 + (i / Math.max(totalFiles, 1)) * 30); // Scales from 35 to 65
+    if (i % 5 === 0) {
+      yield {
+        type: "progress",
+        step: "fetching_files",
+        message: `Fetching ${i + 1}/${totalFiles}: ${fileItem.path}`,
+        progress,
+      };
+    }
+    const content = await fetchFileContent(owner, repo, fileItem.path);
+    if (content) {
+      fileContents.push({ path: fileItem.path, content });
+    } else {
+      failed++;
+    }
+  }
 }
