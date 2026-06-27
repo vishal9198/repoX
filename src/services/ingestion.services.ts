@@ -56,5 +56,21 @@ export async function* ingestRepoGenerator(repoUrl: string) {
 
   let metadata;
   try {
-  } catch (error) {}
+    metadata = await fetchRepoMetadata(owner, repo);
+    yield {
+      type: "progress",
+      step: "metadata_fetched",
+      message: `Repository: ${metadata.description || "No description"}`,
+      progress: 15,
+      metadata,
+    };
+  } catch (error) {
+    yield {
+      type: "error",
+      step: "fetching_metadata",
+      message: `Failed to fetch metadata: ${(error as Error).message}`,
+      progress: 0,
+    };
+    return;
+  }
 }
