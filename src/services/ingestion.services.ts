@@ -130,4 +130,75 @@ export async function* ingestRepoGenerator(repoUrl: string) {
       failed++;
     }
   }
+  yield {
+    type: "progress",
+    step: "files_fetched",
+    message: `Fetched ${fileContents.length} files (${failed} skipped)`,
+    progress: 65,
+  };
+  if (fileContents.length === 0) {
+    yield {
+      type: "error",
+      step: "files_fetched",
+      message:
+        "No file content could be fetched. Is it a public text-based repo?",
+      progress: 0,
+    };
+    return;
+  }
+  //step 5 chunk the text since file content have all the files with actual code content now need of to chunk the contents
+  yield {
+    type: "progress",
+    step: "chunking",
+    message: "Chunking file content...",
+    progress: 70,
+  };
+  const allChunks: CodeChunk[] = [];
+  for (const file of fileContents) {
+    const chunks = chunkText(file.content, file.path);
+    allChunks.push(...chunks);
+  }
+  yield {
+    type: "progress",
+    step: "chunking_done",
+    message: `Created ${allChunks.length} chunks from ${fileContents.length} files`,
+    progress: 75,
+  };
+  // Step 6: Embed and Store in ChromaDB
+  yield {
+    type: "progress",
+    step: "embedding",
+    message: `Embedding ${allChunks.length} chunks... This may take a moment.`,
+    progress: 78,
+  };
+  let stored = 0;
+  try {
+    stored = await ingestRepoToDb(repoName, allChunks);
+    yield {
+      type: "progress",
+      step: "storing",
+      message: `Stored ${stored} chunks in ChromaDB`,
+      progress: 95,
+    };
+  } catch (error) {
+    yield {
+      type: "error",
+      step: "embedding",
+      message: `Failed to embed/store: ${(error as Error).message}`,
+      progress: 0,
+    };
+    return;
+  }
+
+  // Step 7: Done!
+  yield {
+    type: "complete",
+    step: "done",
+    message: `Successfully indexed ${repoName}! Ready for chat.`,
+    progress: 100,
+    repo_name: repoName,
+    chunk_count: stored,
+    file_count: fileContents.length,
+    metadata,
+  };
 }
