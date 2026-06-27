@@ -73,4 +73,30 @@ export async function* ingestRepoGenerator(repoUrl: string) {
     };
     return;
   }
+  // fetching the tree structure of the repo so that we can loop over the folders and files and fetch the content of each file and then chunk the content and then send to vector.services.ts to ingest into the database
+
+  yield {
+    type: "progress",
+    step: "fetching_tree",
+    message: "Fetching repository file tree...",
+    progress: 20,
+  };
+  let tree;
+  try {
+    tree = await fetchRepoTree(owner, repo, metadata.default_branch);
+    yield {
+      type: "ptogress",
+      step: "fetching_tree",
+      message: `Found ${tree.length}ctitical files`,
+      progress: 30,
+    };
+  } catch (error) {
+    yield {
+      type: "error",
+      step: "fetching_tree",
+      message: `Failed to fetch file tree: ${(error as Error).message}`,
+      progress: 0,
+    };
+    return;
+  }
 }
