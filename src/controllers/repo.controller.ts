@@ -64,6 +64,7 @@ export const ingestRepoController = async (
 
   try {
     // Consume async generator step-by-step as events arrive
+    //The for await...of loop: This is JavaScript's native way of consuming the async function* generator we built in the last step. It perfectly pauses and waits for the next yield.
     for await (const event of ingestRepoGenerator(repoUrl)) {
       //normal for of loop will not work here because it will wait for the whole generator to finish and then return the result but we want to stream the result as it comes in so we use for await of loop which will wait for each yield to finish and then return the result
 
